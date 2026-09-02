@@ -967,6 +967,7 @@ export class Game {
       this.log.push({ t: this.workT, k: "dn", i: 0 });
       this.unlocked[1] = true;
       this.tool = 2;
+      this.laserDown = false;
       this.stampLayer("ЛИПУЧКА СНЯТА! ТЕПЕРЬ ЛАЗЕР", "#e08f2a");
       this.audio.unlock();
       this.flash("255,198,61", 0.2);
@@ -1522,6 +1523,7 @@ export class Game {
     this.log.push({ t: this.workT, k: "dn", i: 1 });
     this.unlocked[2] = true;
     this.tool = 3;
+    if (this.laserDown) { this.audio.laserStop(); this.laserDown = false; }
     this.stampLayer("РЖАВЧИНА СНЯТА ДОЧИСТА! ТЕПЕРЬ ПЕНА", "#e05a39");
     this.audio.unlock();
     this.flash("255,198,61", 0.2);
@@ -1965,9 +1967,20 @@ export class Game {
         // слой сам дотает и переключит инструмент, даже если держать кнопку зажатой.
         if (Math.floor(this.time * 3) !== Math.floor((this.time - dt) * 3)) {
           if (!this.oxideDone) {
+            const prevFrac = this.oxideFrac;
             this.oxideFrac = this.countCovered(this.oxideCovX, 128) / this.oxideMaskPx;
-            // осталось ≤10% — финальное дотаяние дочистит слой полностью
-            if (this.oxideFrac <= 0.1) this.oxideFadeT = Math.max(this.oxideFadeT, 0.6);
+            // осталось ≤15% — финальное дотаяние дочистит слой полностью
+            if (this.oxideFrac <= 0.15) this.oxideFadeT = Math.max(this.oxideFadeT, 0.6);
+            // защита от зависания: если фракция очень маленькая но больше 0.1, всё равно запускаем fade
+            if (this.oxideFrac > 0 && this.oxideFrac < 0.2 && prevFrac === this.oxideFrac) {
+              this.oxideFadeT = Math.max(this.oxideFadeT, 0.6);
+            }
+            // защита от минимального значения countCovered (возвращает минимум 1)
+            // если oxideFrac застрял на минимуме (1/oxideMaskPx), запускаем завершение
+            const minFrac = 1 / this.oxideMaskPx;
+            if ((this.oxideFrac <= minFrac + 0.001 || this.oxideFrac < 0.01) && this.oxideFadeT <= 0) {
+              this.oxideFadeT = 0.5;
+            }
           }
           if (this.foamPhase === 1 && !this.greaseDone) {
             this.foamFrac = this.countCovered(this.foamCovX, 40) / this.oxideMaskPx;
