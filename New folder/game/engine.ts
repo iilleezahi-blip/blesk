@@ -1270,6 +1270,9 @@ export class Game {
       this.greaseCovX.globalCompositeOperation = "destination-out";
       brush(this.greaseCovX, ix * k, iy * k, r * k);
       this.greaseCovX.globalCompositeOperation = "source-over";
+      this.foamCovX.globalCompositeOperation = "destination-out";
+      brush(this.foamCovX, ix * k, iy * k, r * k);
+      this.foamCovX.globalCompositeOperation = "source-over";
     }
     this.greaseDirty = true;
 
@@ -1964,7 +1967,7 @@ export class Game {
         // двигает ли игрок инструментом прямо сейчас) — чистка не может «зависнуть»:
         // слой сам дотает и переключит инструмент, даже если держать кнопку зажатой.
         if (Math.floor(this.time * 3) !== Math.floor((this.time - dt) * 3)) {
-          if (!this.oxideDone) {
+          if (!this.oxideDone && this.oxideFadeT <= 0) {
             this.oxideFrac = this.countCovered(this.oxideCovX, 128) / this.oxideMaskPx;
             // осталось ≤10% — финальное дотаяние дочистит слой полностью
             if (this.oxideFrac <= 0.1) this.oxideFadeT = Math.max(this.oxideFadeT, 0.6);
@@ -1998,7 +2001,13 @@ export class Game {
           let alive = 0;
           for (const p of this.polys) if (p.alive) alive++;
           activeFrac = alive / total;
-        } else if (this.tool === 2 && !this.oxideDone) activeFrac = this.oxideFrac;
+        } else if (this.tool === 2 && !this.oxideDone) {
+          activeFrac = this.oxideFrac;
+          // Если оксид почти полностью удалён (≤10%), но oxideFadeT ещё не запущен — запускаем
+          if (activeFrac <= 0.1 && this.oxideFadeT <= 0) {
+            this.oxideFadeT = 0.6;
+          }
+        }
         else if (this.tool === 3 && !this.greaseDone)
           activeFrac = this.foamPhase === 1 ? 1 - this.foamFrac : this.greaseFrac;
         if (activeFrac >= 0) {
