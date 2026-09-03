@@ -1562,6 +1562,7 @@ export class Game {
       const rr2 = this.S * (0.2 + Math.random() * 0.5);
       this.spawn("star", Math.cos(a) * rr2, Math.sin(a) * rr2, 1, PASTELS[i % PASTELS.length]);
     }
+    this.finishOrder();
     this.pushHud();
   }
 
@@ -3307,7 +3308,7 @@ export class Game {
   pushHud() {
     if (!this.onHud) return;
     const resinFrac = this.polys.length ? 1 - this.polys.filter((p) => p.alive).length / this.polys.length : 0;
-    const greaseFrac = this.greaseDone ? 1 : clamp((1 - this.greaseFrac) + (this.foamPhase === 1 ? this.foamFrac * 0.12 : 0), 0, 0.99);
+    const greaseFrac = this.greaseDone ? 1 : clamp((1 - this.greaseFrac) + (this.foamPhase === 1 ? this.foamFrac * 0.12 : 0), 0, 1);
     const clean = Math.round(100 * (0.34 * resinFrac + 0.33 * (1 - this.oxideFrac) + 0.33 * greaseFrac));
     const s: HudSnapshot = {
       phase: this.phase,
