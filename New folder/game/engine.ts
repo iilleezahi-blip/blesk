@@ -153,6 +153,7 @@ export class Game {
   crackC: HTMLCanvasElement | null = null; crackX: CanvasRenderingContext2D | null = null;
   greaseCovC!: HTMLCanvasElement; greaseCovX!: CanvasRenderingContext2D;
   greaseMaskPx = 1; greaseFrac = 1; greaseDirty = false;
+  foamDirty = false;
   /** Таймер финального дотаяния пены/жира (слой завершается, когда исчез визуально). */
   greaseFadeT = 0;
   foamCreepT = 0;
@@ -1275,6 +1276,7 @@ export class Game {
       this.foamCovX.globalCompositeOperation = "source-over";
     }
     this.greaseDirty = true;
+    this.foamDirty = true;
 
     // ФИЗИКА ДВОРНИКА: резинка толкает пену перед собой комками
     const ddx = to.x - from.x, ddy = to.y - from.y;
@@ -1985,12 +1987,13 @@ export class Game {
             }
           }
           if (this.foamPhase === 2 && !this.greaseDone) {
-            this.greaseFrac = this.countCovered(this.greaseCovX, 128) / this.greaseMaskPx;
+            this.greaseFrac = this.countCovered(this.greaseCovX, 128) / this.oxideMaskPx;
             // осталось ≤10% — финальное дотаяние уберёт всё «до блеска»
             if (this.greaseFrac <= 0.1) this.greaseFadeT = Math.max(this.greaseFadeT, 0.6);
           }
           this.oxideDirty = false;
           this.greaseDirty = false;
+          this.foamDirty = false;
         }
         // СТРАХОВКА ОТ «БЕСКОНЕЧНОЙ ЧИСТКИ»: если ребёнок застрял (5 секунд без
         // прогресса), но слой уже отмыт больше чем наполовину — игра мягко домывает
